@@ -1,4 +1,5 @@
-const Usuario = require('../models/Usuario')
+const Usuario = require('../models/Usuario');
+const Producto = require('../models/Producto');
 // importamos bcryptjs para crear hashear los pass
 var bcrypt = require('bcryptjs');
 // importamos jwt
@@ -111,6 +112,18 @@ const resolvers = {
                 }
             }
         */
+        },
+        nuevoProducto: async ( _, { input } ) => {
+            try {
+                // Creamos el objeto del tipo Producto
+                const nuevoProducto = new Producto(input);
+                // guardamos en la BD
+                const resultado = await nuevoProducto.save();
+                // retornamos el producto creado
+                return resultado;
+            } catch (error) {
+                console.log(error);
+            }
         },
     }
 }
