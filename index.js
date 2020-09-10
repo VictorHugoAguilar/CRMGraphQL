@@ -1,5 +1,4 @@
 const { ApolloServer } = require('apollo-server');
-
 // Importamos los shemas
 const typeDefs = require('./db/schema');
 // Importamos los resolvers
