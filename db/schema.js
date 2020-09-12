@@ -35,7 +35,12 @@ const typeDefs = gql`
        precio: Float!
    }
    type Query {
-    fnGetUser(token: String!) : Usuario
+       #Usuarios
+        fnGetUser(token: String!) : Usuario
+
+        #Productos
+        fnGetProductos: [Producto]
+        fnGetProductoById(id: ID!): Producto
    }
    type Mutation {
         # Usuarios

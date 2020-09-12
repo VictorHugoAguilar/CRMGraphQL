@@ -17,6 +17,7 @@ const getToken = (usuario, secreta, expiresIn) => {
 // Resolvers
 const resolvers = {
     Query: {
+        // Usuarios
         fnGetUser: async (_, { token }) => {
             // comprobamos el token
             const userId = await jwt.verify(token, process.env.SECRETA);
@@ -36,7 +37,54 @@ const resolvers = {
              "token": " ... token ..."
             }
             */
-        }
+        },
+
+        // Productos
+        fnGetProductos: async () => {
+            try {
+                const productos = await Producto.find({});
+                return productos;
+            } catch (error) {
+                console.log(error);
+            }
+            // Query de consulta
+            /*
+            query fnGetProductos{
+                fnGetProductos{
+                    nombre
+                    precio
+                    existencia
+                }
+            }
+            */
+        },
+        fnGetProductoById: async (_, { id }) => {
+            try {
+                // revisamos si existe el producto
+                const producto = await Producto.findById(id);
+                if (!producto) {
+                    throw new Error('Producto no encotrado');
+                }
+                return producto;
+            } catch (error) {
+                console.log(error);
+            }
+            // Query
+            /*
+            query fnGetProductoById($id: ID!){
+                fnGetProductoById(id: $id){
+                    id
+                    nombre
+                    precio
+                    existencia
+                }
+            }
+            // QUERY
+            {
+                 "id": "5f5a82dd3ceead2d8a57be97"
+            }
+            */
+        },
     },
     Mutation: {
         nuevoUsuario: async (_, { input }) => {
@@ -113,7 +161,7 @@ const resolvers = {
             }
         */
         },
-        nuevoProducto: async ( _, { input } ) => {
+        nuevoProducto: async (_, { input }) => {
             try {
                 // Creamos el objeto del tipo Producto
                 const nuevoProducto = new Producto(input);
@@ -124,6 +172,25 @@ const resolvers = {
             } catch (error) {
                 console.log(error);
             }
+            /*
+            mutation nuevoProducto($input: ProductoInput) {
+                nuevoProducto(input: $input){
+                    id
+                    nombre
+                    existencia
+                    precio
+                    creado
+                }
+            }
+            QUERY
+            {
+                "input" : {
+                    "nombre": "ventilador",
+                    "existencia": 2,
+                    "precio": 19.99
+                }
+            }
+            */
         },
     }
 }
