@@ -62,9 +62,10 @@ const resolvers = {
             try {
                 // revisamos si existe el producto
                 const producto = await Producto.findById(id);
+                console.log(producto);
                 if (!producto) {
                     throw new Error('Producto no encotrado');
-                }
+                } 
                 return producto;
             } catch (error) {
                 console.log(error);
@@ -192,6 +193,68 @@ const resolvers = {
             }
             */
         },
+        fnUpdateProducto: async (_, { id, input }) => {
+            try {
+                // revisamos si existe el producto
+                let producto = await Producto.findById(id);
+                console.log(producto)
+                if (!producto) {
+                    throw new Error('Producto no encotrado');
+                }
+                // guardamos el nuevo producto
+                producto = await Producto.findOneAndUpdate({ _id: id }, input, { new: true });
+
+                return producto;
+            } catch (error) {
+                console.log(error);
+            }
+            // Query
+            /*
+            mutation fnUpdateProducto( $id: ID!, $input: ProductoInput ){
+                fnUpdateProducto(id: $id, input: $input){
+                    id
+                    nombre
+                    existencia
+                    precio
+                }
+            }
+            // QUERY
+            {
+            "id" : "5f5c9800a364a6c7b61060b6",
+                "input" : {
+                    "nombre": "raton razer",
+                    "existencia": 14,
+                    "precio": 15.99
+                }
+            }
+            */
+        },
+        fnDeleteProducto: async (_, { id }) => {
+            try {
+                // revisamos si existe el producto
+                let producto = await Producto.findById(id);
+                if (!producto) {
+                    throw new Error('Producto no encotrado');
+                }
+                // Eliminamos el producto
+                await Producto.findOneAndDelete({ _id: id });
+
+                return "Producto Eliminado Correctamente";
+            } catch (error) {
+                console.log(error);
+            }
+            // QUERY
+            /*
+            mutation fnDeleteProducto($id: ID!){
+                fnDeleteProducto(id: $id)
+            }
+            // QUERY
+            {
+                "id":"5f5a8330b5c6d7360236d87a"
+            }
+            */
+        }
+
     }
 }
 module.exports = resolvers;
