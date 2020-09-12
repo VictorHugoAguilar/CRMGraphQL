@@ -61,6 +61,7 @@ const typeDefs = gql`
         #Clientes
         fnGetClientes: [Cliente]
         fnGetClientesByVendendor: [Cliente]
+        fnGetClienteById(id: ID!): Cliente
    }
    type Mutation {
         # Usuarios

@@ -111,6 +111,9 @@ const resolvers = {
         },
         fnGetClientesByVendendor: async (_, { }, ctx) => {
             // Obtenemos el usuario del context
+            if (!ctx.user) {
+                throw new Error('Id del usuario no obtenida');
+            }
             const { id } = ctx.user;
             try {
                 const clientes = Cliente.find({ vendedor: id });
@@ -134,7 +137,21 @@ const resolvers = {
                "authorization":"token"
            }
             */
+        },
+        fnGetClienteById: async (_, {id}, ctx) => {
+            // Comprobamos que el cliente exista
+            const cliente = await Cliente.findById(id);
 
+            if(!cliente){
+                throw new Error('Cliente no encontrado');
+            }
+
+            // Quien lo creo puede verlo
+            if(cliente.vendedor.toString() !== ctx.user.id){
+                throw new Error('No tienes credenciales para ver el cliente');
+            }
+
+            return cliente;
         }
     },
     Mutation: {
