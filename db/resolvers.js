@@ -1,5 +1,7 @@
 const Usuario = require('../models/Usuario');
 const Producto = require('../models/Producto');
+const Cliente = require('../models/Cliente');
+
 // importamos bcryptjs para crear hashear los pass
 var bcrypt = require('bcryptjs');
 // importamos jwt
@@ -65,7 +67,7 @@ const resolvers = {
                 console.log(producto);
                 if (!producto) {
                     throw new Error('Producto no encotrado');
-                } 
+                }
                 return producto;
             } catch (error) {
                 console.log(error);
@@ -253,8 +255,28 @@ const resolvers = {
                 "id":"5f5a8330b5c6d7360236d87a"
             }
             */
-        }
+        },
+        fnAddCliente: async (_, { input }) => {
+            const { email } = input;
+            // Verificar si ya esta registrado
+            console.log(input)
+            const cliente = await Cliente.findOne({ email });
+            if (cliente) {
+                throw new Error("El cliente ya existe en la BD");
+            }
+            // asignar el vendedor
 
+            try {
+                // Creamos una instancia del cliente
+                const newCliente = new Cliente(input);
+                // almacenarlo en la BD
+                const resultado = await newCliente.save();
+                // devolvemos el cliente almacenado
+                return resultado;
+            } catch (error) {
+                console.log(error);
+            }
+        }
     }
 }
 module.exports = resolvers;

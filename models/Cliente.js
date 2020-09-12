@@ -31,7 +31,7 @@ const ClienteSchema = mongoose.Schema({
         default: Date.now()
     },
     vendedor: {
-        type: mongoose.Shema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         require: true,
         ref: 'Usuario'
     }
