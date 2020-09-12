@@ -57,6 +57,10 @@ const typeDefs = gql`
         #Productos
         fnGetProductos: [Producto]
         fnGetProductoById(id: ID!): Producto
+
+        #Clientes
+        fnGetClientes: [Cliente]
+        fnGetClientesByVendendor: [Cliente]
    }
    type Mutation {
         # Usuarios

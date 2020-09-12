@@ -88,6 +88,54 @@ const resolvers = {
             }
             */
         },
+        fnGetClientes: async () => {
+            try {
+                const clientes = await Cliente.find({});
+                return clientes;
+            } catch (err) {
+                console.log(err);
+            }
+            // Query
+            /*
+            query fnGetClientes{
+                fnGetClientes{
+                    nombre
+                    apellido
+                    empresa
+                    telefono
+                    email
+                    vendedor
+                }
+            }
+            */
+        },
+        fnGetClientesByVendendor: async (_, { }, ctx) => {
+            // Obtenemos el usuario del context
+            const { id } = ctx.user;
+            try {
+                const clientes = Cliente.find({ vendedor: id });
+                return clientes;
+            } catch (err) {
+                console.log(err);
+            }
+            // Query
+            /*
+            query fnGetClientesByVendendor{
+               fnGetClientesByVendendor{
+                   id
+                   nombre
+                   apellido
+                   empresa
+                   email
+               }
+           }
+           // Headers
+           {
+               "authorization":"token"
+           }
+            */
+
+        }
     },
     Mutation: {
         nuevoUsuario: async (_, { input }) => {
@@ -256,19 +304,21 @@ const resolvers = {
             }
             */
         },
-        fnAddCliente: async (_, { input }) => {
+        fnAddCliente: async (_, { input }, ctx) => {
             const { email } = input;
             // Verificar si ya esta registrado
-            console.log(input)
+            // console.log(input)
             const cliente = await Cliente.findOne({ email });
             if (cliente) {
                 throw new Error("El cliente ya existe en la BD");
             }
+            // Creamos una instancia del cliente
+            const newCliente = new Cliente(input);
+            // Obtenemos el usuario(vendedor) del context
+            const { id } = ctx.user;
             // asignar el vendedor
-
+            newCliente.vendedor = id;
             try {
-                // Creamos una instancia del cliente
-                const newCliente = new Cliente(input);
                 // almacenarlo en la BD
                 const resultado = await newCliente.save();
                 // devolvemos el cliente almacenado
@@ -276,7 +326,30 @@ const resolvers = {
             } catch (error) {
                 console.log(error);
             }
-        }
+            // Query
+            /*
+            mutation fnAddCliente($input: ClienteInput){
+                fnAddCliente(input: $input){
+                    nombre
+                    apellido
+                }
+            }
+            // QUERY
+            {
+            "input": {
+                    "nombre": "victor",
+                    "apellido": "Aguilar",
+                    "empresa": "LaVaca",
+                    "email": "corre1o@correo1.com",
+                    "telefono": "626100391"
+                }
+            }
+            // HEADERS
+            {
+                "authorization":"token"
+            }
+            */
+        },
     }
 }
 module.exports = resolvers;
