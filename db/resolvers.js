@@ -1,6 +1,7 @@
 const Usuario = require('../models/Usuario');
 const Producto = require('../models/Producto');
 const Cliente = require('../models/Cliente');
+const Pedido = require('../models/Pedido');
 
 // importamos bcryptjs para crear hashear los pass
 var bcrypt = require('bcryptjs');
@@ -138,20 +139,132 @@ const resolvers = {
            }
             */
         },
-        fnGetClienteById: async (_, {id}, ctx) => {
+        fnGetClienteById: async (_, { id }, ctx) => {
             // Comprobamos que el cliente exista
             const cliente = await Cliente.findById(id);
-
-            if(!cliente){
+            if (!cliente) {
                 throw new Error('Cliente no encontrado');
             }
-
             // Quien lo creo puede verlo
-            if(cliente.vendedor.toString() !== ctx.user.id){
+            if (cliente.vendedor.toString() !== ctx.user.id) {
                 throw new Error('No tienes credenciales para ver el cliente');
             }
-
             return cliente;
+        },
+        // PEDIDOS
+        fnGetPedido: async () => {
+            try {
+                const pedidos = await Pedido.find({});
+                return pedidos;
+            } catch (error) {
+                console.log(error);
+            }
+            // query
+            /* 
+            query fnGetPedido{
+                fnGetPedido{
+                    id
+                    pedido{
+                        id
+                        cantidad
+                    }
+                    creado
+                    estado
+                    total
+                    vendedor
+                    cliente
+                }
+            }
+            */
+        },
+        fnGetPedidoByVendedor: async (_, { }, ctx) => {
+            try {
+                const pedidos = await Pedido.find({ vendedor: ctx.user.id });
+                return pedidos;
+            } catch (error) {
+                console.log(error);
+            }
+            // Query
+            /*
+            query fnGetPedidoByVendedor{
+                fnGetPedidoByVendedor{
+                    id
+                    pedido{
+                        id
+                        cantidad
+                    }
+                    creado
+                    estado
+                    total
+                    vendedor
+                    cliente
+                }
+            }
+            */
+        },
+        fnGetPedidoById: async (_, { id }, ctx) => {
+            // si el pedido existe o no
+            const pedido = await Pedido.findById(id);
+            if (!pedido) {
+                throw new Error('El pedido no existe');
+            }
+            // comprobar si lo ve quien lo realizo
+            if (pedido.vendedor.toString() !== ctx.user.id) {
+                throw new Error('No tienes credenciales para ver el cliente');
+            }
+            return pedido;
+            // query
+            /**
+            query fnGetPedidoById($id: ID!){
+                fnGetPedidoById(id: $id){
+                    pedido{
+                    id
+                    cantidad
+                    }
+                    id
+                    creado
+                    total
+                    estado
+                }
+            }
+            // QUERY
+            {
+                "id": "5f67424314937760c8950ba6"
+            }
+            // HEADERS
+            {
+                "authorization":"token"
+            }
+            */
+        },
+        fnGetPedidoByStatus: async (_, { estado }, ctx) => {
+            const pedidos = await Pedido.find({ vendedor: ctx.user.id, estado });
+            return pedidos;
+        },
+
+        // MEJORES CLIENTES
+        fnGetMejoresClientes: async () => {
+            const clientes = await Pedido.aggregate([
+                { $match: { estado: "COMPLETADO" } },
+                {
+                    $group: {
+                        _id: "$cliente",
+                        total: { $sum: '$total' }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'clientes',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: "cliente"
+                    }
+                },
+                {
+                    $sort: { total: -1 }
+                }
+            ]);
+            return clientes;
         }
     },
     Mutation: {
@@ -362,6 +475,263 @@ const resolvers = {
                 }
             }
             // HEADERS
+            {
+                "authorization":"token"
+            }
+            */
+        },
+        fnUpdateCliente: async (_, { id, input }, ctx) => {
+            // comprobar que el cliente existe
+            const cliente = await Cliente.findById(id);
+
+            if (!cliente) {
+                throw new Error('El usuario no existe, o id incorrecto');
+            }
+
+            // comprobar que el usuario puede modificarlo
+            if (cliente.vendedor.toString() !== ctx.user.id) {
+                throw new Error('No tienes credenciales para este proceso');
+            }
+
+            try {
+                // actualizar la BD
+                const resultado = await Cliente.findOneAndUpdate({ _id: id }, input, { new: true });
+                // devolvemos el cliente actualizado
+                return resultado;
+            } catch (error) {
+                console.log(error);
+            }
+
+            // QUERY
+            /*
+            mutation fnUpdateCliente($id: ID!, $input: ClienteInput) {
+                fnUpdateCliente(id: $id, input: $input) {
+                    nombre
+                    apellido
+                    email
+                    empresa
+                }
+            }
+            // QUERY
+            {
+                "id": "5f5ca71ba0fc31673b49962d",
+                "input": {
+                    "nombre": "Nuevo Update",
+                    "apellido": "Cliente",
+                    "empresa": "LaChola",
+                    "telefono": "626100391",
+                    "email": "correo3@correo.com"
+                }
+            }
+            // Headers
+            {
+                "authorization":"token"
+            }
+            */
+        },
+        fnDeleteCliente: async (_, { id }, ctx) => {
+            // comprobar que el cliente existe
+            const cliente = await Cliente.findById(id);
+
+            if (!cliente) {
+                throw new Error('El cliente no existe, o id incorrecto');
+            }
+
+            // comprobar que el usuario puede modificarlo
+            if (cliente.vendedor.toString() !== ctx.user.id) {
+                throw new Error('No tienes credenciales para este proceso');
+            }
+
+            try {
+                await Cliente.findOneAndDelete({ _id: id });
+                return "El cliente ha sido eliminado correctamente";
+            } catch (error) {
+                console.error(error);
+            }
+            // Query
+            /**
+             mutation fnDeleteCliente($id: ID!) {
+                fnDeleteCliente(id: $id)
+            }
+            // QUERY
+            {
+               "id":"5f5ca71ba0fc31673b49962d"
+            }
+            // Headers
+            {
+                "authorization":"token"
+            }
+             */
+        },
+
+        // PEDIDODS
+        fnNuevoPedido: async (_, { input }, ctx) => {
+            const { cliente } = input
+            // verificar si el cliente existe o no
+            let clienteExiste = await Cliente.findById(cliente);
+            if (!clienteExiste) {
+                throw new Error('Ese cliente no existe');
+            }
+            // verificar si el cliente es vendedor
+            if (clienteExiste.vendedor.toString() !== ctx.user.id) {
+                throw new Error('El cliente es el vendedor, operación no aceptada');
+            }
+            // Revisar si esta en stock disponible
+            for await (const articulo of input.pedido) {
+                const { id } = articulo;
+                const producto = await Producto.findById(id);
+                if (articulo.cantidad > producto.existencia) {
+                    throw new Error(`El articulo ${producto.nombre} excede la cantidad disponible`);
+                } else {
+                    // Restamos la cantidad de los productos pedidos
+                    producto.existencia = producto.existencia - articulo.cantidad;
+                    // Almacenamos la nueva cantidad
+                    await producto.save();
+                }
+            }
+            // crear el nuevo pedido
+            const nuevoPedido = new Pedido(input);
+            // asignarle el vendedor
+            nuevoPedido.vendedor = ctx.user.id;
+            // Almacenar en la Base de Datos
+            const resultado = await nuevoPedido.save();
+            return resultado;
+            // Query
+            /*
+            mutation fnNuevoPedido($input: PedidoInput){
+                fnNuevoPedido(input: $input){
+                    id
+                    cliente
+                    vendedor
+                    pedido {
+                    id
+                    cantidad
+                    }
+                    total
+                    estado 
+                }
+            }
+            // QUERY
+            {
+            "input": {
+                "pedido": [
+                {
+                "id": "5f5a82dd3ceead2d8a57be97",
+                "cantidad": 2
+                } 
+                ],
+                "total": 300,
+                "cliente": "5f5ca6f8a0fc31673b49962c",
+                "estado": "PENDIENTE"
+              }
+            }
+            // Headers
+            {
+               "authorization":"token"
+            }
+            */
+        },
+        fnUpdatePedido: async (_, { id, input }, ctx) => {
+            const { cliente } = input
+            // si el pedido existe
+            const existePedido = await Pedido.findById(id);
+            if (!existePedido) {
+                throw new Error('Ese pedido no existe');
+            }
+            // verificar si el cliente existe o no
+            let clienteExiste = await Cliente.findById(cliente);
+            if (!clienteExiste) {
+                throw new Error('Ese cliente no existe');
+            }
+            // verificar si el cliente es vendedor
+            if (clienteExiste.vendedor.toString() !== ctx.user.id) {
+                throw new Error('El cliente es el vendedor, operación no aceptada');
+            }
+            // Si no actualizamos temas con los pedidos no lo recorremos
+            if (input.pedido) {
+                // Revisar si esta en stock disponible
+                for await (const articulo of input.pedido) {
+                    const { id } = articulo;
+                    const producto = await Producto.findById(id);
+                    if (articulo.cantidad > producto.existencia) {
+                        throw new Error(`El articulo ${producto.nombre} excede la cantidad disponible`);
+                    } else {
+                        // Restamos la cantidad de los productos pedidos
+                        producto.existencia = producto.existencia - articulo.cantidad;
+                        // Almacenamos la nueva cantidad
+                        await producto.save();
+                    }
+                }
+            }
+            // guardar en BD
+            const resultado = await Pedido.findOneAndUpdate({ _id: id }, input, { new: true });
+            return resultado;
+            // Query
+            /*
+            mutation fnUpdatePedido($id: ID!, $input: PedidoInput){
+                fnUpdatePedido(id: $id, input: $input){
+                    id
+                    pedido{
+                    id
+                    cantidad
+                    }
+                    total
+                    estado
+                    vendedor
+                    creado
+                    cliente
+                }
+            }
+            // query
+            {
+                "id": "5f67424314937760c8950ba6",
+                "input": {
+                        "estado": "PENDIENTE",
+                            "cliente": "5f5ca6f8a0fc31673b49962c"
+                }
+            }
+            // Header
+            {
+                "authorization":"token"
+            }
+            */
+        },
+        fnDeletePedido: async (_, { id }, ctx) => {
+            // si el pedido existe
+            const existePedido = await Pedido.findById(id);
+            if (!existePedido) {
+                throw new Error('Ese pedido no existe');
+            }
+            console.log(existePedido.vendedor)
+            // verificar si el cliente es vendedor
+            if (existePedido.vendedor.toString() !== ctx.user.id) {
+                throw new Error('El cliente es el vendedor, operación no aceptada');
+            }
+            // Sumamos el stock
+            if (existePedido.pedido) {
+                // Revisar si esta en stock disponible
+                for await (const articulo of existePedido.pedido) {
+                    const { id } = articulo;
+                    const producto = await Producto.findById(id);
+                    // sumamos la cantidad de los productos pedidos
+                    producto.existencia = producto.existencia + articulo.cantidad;
+                    // Almacenamos la nueva cantidad
+                    await producto.save();
+                }
+            }
+            // Si pasamos la validación lo eliminamos
+            await Pedido.findOneAndDelete({ _id: id });
+            return "Pedido Eliminado Correctamente";
+            // Query
+            /*
+            mutation fnDeletePedido($id: ID!){
+                fnDeletePedido(id: $id)
+            }
+            // query
+            {
+                "id" : "5f67b41176d69929439d3358"
+            }
+            // header
             {
                 "authorization":"token"
             }

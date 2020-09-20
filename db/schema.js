@@ -27,28 +27,60 @@ const typeDefs = gql`
     email: String
     telefono: String
     vendedor: ID
-}
-   input UsuarioInput {
+    }
+    type Pedido {
+        id: ID
+        pedido: [PedidoGrupo]
+        total: Float
+        cliente: ID
+        vendedor: ID
+        creado: String
+        estado: EstadoPedido
+    }
+    type PedidoGrupo{
+        id: ID
+        cantidad: Int
+    }
+    type TopCliente{
+        total: Float
+        cliente: [Cliente]
+    }
+    input UsuarioInput {
        nombre: String!
        apellido: String!
        email: String!
        password: String!
-   }
-   input AutenticarInput {
+    }
+    input AutenticarInput {
        email: String!
        password: String!
-   }
-   input ProductoInput {
+    }
+    input ProductoInput {
        nombre: String!
        existencia: Int!
        precio: Float!
-   }
-   input ClienteInput {
+    }
+    input ClienteInput {
        nombre: String!
        apellido: String!
        empresa: String!
        email: String!
        telefono: String
+    }
+    input PedidoInput {
+        pedido: [ PedidoProductoInput ]
+        total: Float
+        cliente: ID
+        estado: EstadoPedido
+    }
+    input PedidoProductoInput {
+       id: ID
+       cantidad: Int
+    }
+   enum EstadoPedido {
+        PENDIENTE
+        COMPLETADO
+        CANCELADO
    }
    type Query {
        #Usuarios
@@ -62,6 +94,15 @@ const typeDefs = gql`
         fnGetClientes: [Cliente]
         fnGetClientesByVendendor: [Cliente]
         fnGetClienteById(id: ID!): Cliente
+
+        #Pedidos
+        fnGetPedido: [Pedido]
+        fnGetPedidoByVendedor: [Pedido]
+        fnGetPedidoById(id: ID!) : Pedido 
+        fnGetPedidoByStatus( estado: String! ) : [Pedido]
+
+        # Busquedas Avanzadas
+        fnGetMejoresClientes: [ TopCliente]
    }
    type Mutation {
         # Usuarios
@@ -75,6 +116,13 @@ const typeDefs = gql`
 
         # Clientes
         fnAddCliente(input: ClienteInput) : Cliente
+        fnUpdateCliente(id: ID!, input: ClienteInput) : Cliente
+        fnDeleteCliente(id: ID!) : String
+
+        # Pedidos
+        fnNuevoPedido( input: PedidoInput ) : Pedido
+        fnUpdatePedido(id: ID!, input: PedidoInput) : Pedido
+        fnDeletePedido( id: ID!): String
    }
 `;
 

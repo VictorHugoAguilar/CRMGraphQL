@@ -1,38 +1,38 @@
 const mongoose = require('mongoose');
 
 const ClienteSchema = mongoose.Schema({
-    nombre:{
+    nombre: {
         type: String,
-        require: true,
+        required: true,
         trim: true
     },
-    apellido:{
+    apellido: {
         type: String,
-        require: true,
+        required: true,
         trim: true
     },
-    empresa:{
+    empresa: {
         type: String,
-        require: true,
+        required: true,
         trim: true
     },
-    email:{
-       type: String,
-        require: true,
+    email: {
+        type: String,
+        required: true,
         unique: true,
         trim: true
     },
-    telefono:{
+    telefono: {
         type: String,
         trim: true
     },
-    creado:{
+    creado: {
         type: Date,
         default: Date.now()
     },
     vendedor: {
         type: mongoose.Schema.Types.ObjectId,
-        require: true,
+        required: true,
         ref: 'Usuario'
     }
 })
