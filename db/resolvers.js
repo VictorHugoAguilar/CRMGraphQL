@@ -261,10 +261,72 @@ const resolvers = {
                     }
                 },
                 {
+                    $limit: 10
+                },
+                {
                     $sort: { total: -1 }
                 }
             ]);
             return clientes;
+            /**
+            // QUERY
+            query fnGetMejoresClientes{
+                fnGetMejoresClientes{
+                    cliente{
+                    id
+                    empresa
+                    apellido
+                    telefono
+                    nombre
+                    }
+                    total
+                }
+            }
+            */
+        },
+        fnGetMejoresVendedores: async () => {
+            const vendedores = await Pedido.aggregate([
+                { $match: { estado: "COMPLETADO" } },
+                {
+                    $group: {
+                        _id: "$vendedor",
+                        total: { $sum: '$total' }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'usuarios',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: "vendedor"
+                    }
+                },
+                {
+                    $limit: 3
+                },
+                {
+                    $sort: { total: -1 }
+                }
+            ]);
+            return vendedores;
+            /*
+            // QUERY
+            query fnGetMejoresVendedores{
+                fnGetMejoresVendedores{
+                    total
+                    vendedor{
+                    nombre
+                    email
+                    id
+                    }
+                }
+            }
+            */
+        },
+        fnGetProducto: async (_, { texto }) => {
+            const productos = await Producto.find({ $text: { $search: texto } })
+                .limit(20);
+            return productos;
         }
     },
     Mutation: {
